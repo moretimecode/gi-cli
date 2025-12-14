@@ -1,0 +1,11 @@
+{
+    "ProjectName": "tools",
+    "BuildPath": "D:\\Work\\Golang\\go-cli",
+    "DotNetHosts": {
+        "web": "",
+        "host": ""
+    },
+    "Proxy": {
+        "Socks5": "socks5://127.0.0.1:1080"
+    }
+}
