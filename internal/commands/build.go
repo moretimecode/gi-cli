@@ -29,3 +29,28 @@ var BuildCmd = &cobra.Command{
 		}
 	},
 }
+
+var BuildImageCmd = &cobra.Command{
+	Use:   "build-image",
+	Short: "为项目构建 Docker 镜像",
+	Run: func(cmd *cobra.Command, args []string) {
+		projectInfo := DetectProjectType()
+		switch projectInfo.Type {
+		case ProjectTypeGo:
+			error := golangs.BuildGoDockerImage(projectInfo.MainFilePaths[0])
+			if error != nil {
+				panic(error)
+			}
+		case ProjectTypeDotNet:
+			error := dotnets.BuildDotNetDockerImage(GetHostType())
+			if error != nil {
+				panic(error)
+			}
+		}
+	},
+}
+
+func init() {
+	RegisterHostTypeFlag(BuildCmd)
+	RegisterHostTypeFlag(BuildImageCmd)
+}

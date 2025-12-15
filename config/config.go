@@ -11,10 +11,15 @@ import (
 const ConfigName = "toolsconfig.json"
 
 type Config struct {
-	ProjectName string            `json:"ProjectName"`
-	BuildPath   string            `json:"BuildPath"`
-	DotNetHosts map[string]string `json:"DotNetHosts"`
-	Proxy       Proxy             `json:"Proxy"`
+	ProjectName string                `json:"ProjectName"`
+	BuildPath   string                `json:"BuildPath"`
+	DotNetHosts map[string]DotNetHost `json:"DotNetHosts"`
+	Proxy       Proxy                 `json:"Proxy"`
+}
+
+type DotNetHost struct {
+	CsProjectPath  string `json:"CsProjectPath"`
+	DockerfilePath string `json:"DockerfilePath"`
 }
 
 type Proxy struct {

@@ -15,6 +15,10 @@ func BuildGoProject(mainFilePath string) error {
 	return err
 }
 
+func BuildGoDockerImage(mainFilePath string) error {
+	return nil
+}
+
 func RunGoProject(mainFilePath string) error {
 	exePath, err := build(mainFilePath)
 	if err != nil {

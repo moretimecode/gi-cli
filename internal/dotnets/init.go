@@ -21,7 +21,7 @@ func InitDotNetProject(mainFilePaths []string) error {
 		return fmt.Errorf("获取当前目录失败: %v", err)
 	}
 
-	projectMaps := make(map[string]string)
+	projectMaps := make(map[string]config.DotNetHost)
 
 	for _, path := range mainFilePaths {
 		projectDir := filepath.Dir(path)
@@ -34,7 +34,12 @@ func InitDotNetProject(mainFilePaths []string) error {
 			if csprojPath != "" {
 				fileName := filepath.Base(csprojPath)
 				nameWithoutExt := strings.TrimSuffix(fileName, filepath.Ext(fileName))
-				projectMaps[nameWithoutExt] = csprojPath
+				dockerfilePath, _ := pathhelp.FindFileByFullNameInDir("Dockerfile", projectDir)
+
+				projectMaps[nameWithoutExt] = config.DotNetHost{
+					CsProjectPath:  csprojPath,
+					DockerfilePath: dockerfilePath,
+				}
 			}
 			continue
 		}

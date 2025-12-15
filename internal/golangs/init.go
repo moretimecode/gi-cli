@@ -23,7 +23,7 @@ func InitGoProject(projectName string) error {
 	cfg := &config.Config{
 		ProjectName: projectName,
 		BuildPath:   binFullDirPath,
-		DotNetHosts: map[string]string{},
+		DotNetHosts: map[string]config.DotNetHost{},
 		Proxy: config.Proxy{
 			Socks5: "socks5://127.0.0.1:1080",
 		},
