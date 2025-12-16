@@ -28,12 +28,10 @@ var proxySetCmd = &cobra.Command{
 			return
 		}
 
-		proxyURL := fmt.Sprintf("socks5://%s", cfg.Proxy.Socks5)
-
 		fmt.Println("复制并执行以下命令来设置代理:")
 		fmt.Println()
-		fmt.Printf("$env:http_proxy = \"%s\"\n", proxyURL)
-		fmt.Printf("$env:https_proxy = \"%s\"\n", proxyURL)
+		fmt.Printf("$env:http_proxy = \"%s\"\n", cfg.Proxy.Socks5)
+		fmt.Printf("$env:https_proxy = \"%s\"\n", cfg.Proxy.Socks5)
 		fmt.Println()
 		fmt.Println("取消代理:")
 		fmt.Println("$env:http_proxy = \"\"; $env:https_proxy = \"\"")
@@ -53,22 +51,20 @@ var proxyRunCmd = &cobra.Command{
 			return
 		}
 
-		proxyURL := fmt.Sprintf("socks5://%s", cfg.Proxy.Socks5)
-
 		// 创建命令
 		command := exec.Command(args[0], args[1:]...)
 
 		// 设置环境变量
 		command.Env = os.Environ()
-		command.Env = append(command.Env, fmt.Sprintf("http_proxy=%s", proxyURL))
-		command.Env = append(command.Env, fmt.Sprintf("https_proxy=%s", proxyURL))
+		command.Env = append(command.Env, fmt.Sprintf("http_proxy=%s", cfg.Proxy.Socks5))
+		command.Env = append(command.Env, fmt.Sprintf("https_proxy=%s", cfg.Proxy.Socks5))
 
 		// 连接输出
 		command.Stdout = os.Stdout
 		command.Stderr = os.Stderr
 		command.Stdin = os.Stdin
 
-		fmt.Printf("使用代理 %s 运行: %v\n", proxyURL, args)
+		fmt.Printf("使用代理 %s 运行: %v\n", cfg.Proxy.Socks5, args)
 
 		// 执行命令
 		err := command.Run()
