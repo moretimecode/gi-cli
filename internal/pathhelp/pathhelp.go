@@ -42,31 +42,48 @@ func FindFileInCurrentAndSubDirs(filename string) (bool, []string) {
 	return false, nil
 }
 
-func FindFileByExtInDir(ext string, dirPath string) (string, error) {
-	if !strings.HasPrefix(ext, ".") {
-		ext = "." + ext
-	}
+// MatchFunc 定义文件名匹配函数类型
+type MatchFunc func(filename string) bool
 
-	var csprojPath string
+// findFileInDir 通用的目录内文件查找函数
+func findFileInDir(dirPath string, matcher MatchFunc) (string, error) {
 	entries, err := os.ReadDir(dirPath)
 	if err != nil {
 		return "", err
 	}
 
 	for _, entry := range entries {
-		if !entry.IsDir() && filepath.Ext(entry.Name()) == ext {
-			csprojPath = filepath.Join(dirPath, entry.Name())
-			absPath, err := filepath.Abs(csprojPath)
+		if !entry.IsDir() && matcher(entry.Name()) {
+			filePath := filepath.Join(dirPath, entry.Name())
+			absPath, err := filepath.Abs(filePath)
 			if err == nil {
-				csprojPath = absPath
+				filePath = absPath
 			}
-			break
+			return filePath, nil
 		}
 	}
 
-	if csprojPath == "" {
-		return "", fmt.Errorf("目录 %s 中未找到 %s 文件", dirPath, ext)
+	return "", fmt.Errorf("未找到匹配的文件")
+}
+
+func FindFileByExtInDir(ext string, dirPath string) (string, error) {
+	if !strings.HasPrefix(ext, ".") {
+		ext = "." + ext
 	}
 
-	return csprojPath, nil
+	return findFileInDir(
+		dirPath,
+		func(filename string) bool {
+			return filepath.Ext(filename) == ext
+		},
+	)
+}
+
+func FindFileByFullNameInDir(filename string, dirPath string) (string, error) {
+	return findFileInDir(
+		dirPath,
+		func(name string) bool {
+			return name == filename
+		},
+	)
 }

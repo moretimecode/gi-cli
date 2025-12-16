@@ -20,6 +20,7 @@ func main() {
 	rootCmd.AddCommand(commands.ProjectCmd)
 	rootCmd.AddCommand(commands.RunCmd)
 	rootCmd.AddCommand(commands.BuildCmd)
+	rootCmd.AddCommand(commands.BuildImageCmd)
 	rootCmd.AddCommand(commands.ProxyCmd)
 	rootCmd.AddCommand(commands.CompletionCmd)
 	rootCmd.Execute()

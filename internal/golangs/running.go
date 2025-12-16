@@ -3,9 +3,12 @@ package golangs
 import (
 	"fmt"
 	"gocli/config"
+	"gocli/internal/pathhelp"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
+	"time"
 )
 
 const GoDefaultMainFile = "main.go"
@@ -16,6 +19,28 @@ func BuildGoProject(mainFilePath string) error {
 }
 
 func BuildGoDockerImage(mainFilePath string) error {
+	cfg := config.GetConfigInstance()
+	currentDir, err := os.Getwd()
+	if err != nil {
+		return fmt.Errorf("获取当前目录失败: %v", err)
+	}
+
+	dockerfilePath, err := pathhelp.FindFileByFullNameInDir(currentDir, "Dockerfile")
+	if err != nil {
+		return fmt.Errorf("未找到 Dockerfile: %v", err)
+	}
+
+	imageName := strings.ToLower(fmt.Sprintf("%s-image:%d", cfg.ProjectName, time.Now().Unix()))
+	fmt.Printf("正在构建 Docker 镜像: %s\n", imageName)
+
+	cmd := exec.Command("docker", "build", "-f", dockerfilePath, "--no-cache", "--rm", "-t", imageName, ".")
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	fmt.Printf("正在为 GO 项目 (%s) 构建 Docker 镜像: %s\n", cfg.ProjectName, dockerfilePath)
+	err = cmd.Run()
+	if err != nil {
+		return fmt.Errorf("构建 Docker 镜像失败: %v", err)
+	}
 	return nil
 }
 
