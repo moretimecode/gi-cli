@@ -14,16 +14,11 @@ type Config struct {
 	ProjectName string                `json:"ProjectName"`
 	BuildPath   string                `json:"BuildPath"`
 	DotNetHosts map[string]DotNetHost `json:"DotNetHosts"`
-	Proxy       Proxy                 `json:"Proxy"`
 }
 
 type DotNetHost struct {
 	CsProjectPath  string `json:"CsProjectPath"`
 	DockerfilePath string `json:"DockerfilePath"`
-}
-
-type Proxy struct {
-	Socks5 string `json:"Socks5"`
 }
 
 var (

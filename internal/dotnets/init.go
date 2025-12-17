@@ -47,9 +47,6 @@ func InitDotNetProject(mainFilePaths []string) error {
 	cfg := &config.Config{
 		ProjectName: filepath.Base(currentDir),
 		DotNetHosts: projectMaps,
-		Proxy: config.Proxy{
-			Socks5: "socks5://127.0.0.1:1080",
-		},
 	}
 	configPath := filepath.Join(currentDir, config.ConfigName)
 	data, err := json.MarshalIndent(cfg, "", "  ")

@@ -24,9 +24,6 @@ func InitGoProject(projectName string) error {
 		ProjectName: projectName,
 		BuildPath:   binFullDirPath,
 		DotNetHosts: map[string]config.DotNetHost{},
-		Proxy: config.Proxy{
-			Socks5: "socks5://127.0.0.1:1080",
-		},
 	}
 	configPath := filepath.Join(currentDir, config.ConfigName)
 	data, err := json.MarshalIndent(cfg, "", "  ")
