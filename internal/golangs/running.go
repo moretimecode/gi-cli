@@ -3,7 +3,7 @@ package golangs
 import (
 	"fmt"
 	"gocli/config"
-	"gocli/internal/pathhelp"
+	"gocli/internal/utils"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -25,7 +25,7 @@ func BuildGoDockerImage(mainFilePath string) error {
 		return fmt.Errorf("获取当前目录失败: %v", err)
 	}
 
-	dockerfilePath, err := pathhelp.FindFileByFullNameInDir(currentDir, "Dockerfile")
+	dockerfilePath, err := utils.FindFileByFullNameInDir(currentDir, "Dockerfile")
 	if err != nil {
 		return fmt.Errorf("未找到 Dockerfile: %v", err)
 	}

@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"gocli/config"
-	"gocli/internal/pathhelp"
+	"gocli/internal/utils"
 )
 
 func InitDotNetProject(mainFilePaths []string) error {
@@ -27,14 +27,14 @@ func InitDotNetProject(mainFilePaths []string) error {
 		projectDir := filepath.Dir(path)
 		if projectDir != "." {
 			fmt.Printf("初始化 .NET 项目目录: %s\n", projectDir)
-			csprojPath, err := pathhelp.FindFileByExtInDir(".csproj", projectDir)
+			csprojPath, err := utils.FindFileByExtInDir(".csproj", projectDir)
 			if err != nil {
 				return fmt.Errorf("查找 .csproj 文件失败: %v", err)
 			}
 			if csprojPath != "" {
 				fileName := filepath.Base(csprojPath)
 				nameWithoutExt := strings.TrimSuffix(fileName, filepath.Ext(fileName))
-				dockerfilePath, _ := pathhelp.FindFileByFullNameInDir("Dockerfile", projectDir)
+				dockerfilePath, _ := utils.FindFileByFullNameInDir("Dockerfile", projectDir)
 
 				projectMaps[nameWithoutExt] = config.DotNetHost{
 					CsProjectPath:  csprojPath,

@@ -5,7 +5,7 @@ import (
 
 	"gocli/internal/dotnets"
 	"gocli/internal/golangs"
-	"gocli/internal/pathhelp"
+	"gocli/internal/utils"
 )
 
 type ProjectType int
@@ -36,14 +36,14 @@ func DetectProjectType() *ProjectInfo {
 		Type: ProjectTypeUnknown,
 	}
 
-	isGolangProject, goMainFiles := pathhelp.FindFileInCurrentAndSubDirs(golangs.GoDefaultMainFile)
+	isGolangProject, goMainFiles := utils.FindFileInCurrentAndSubDirs(golangs.GoDefaultMainFile)
 	if isGolangProject {
 		info.Type = ProjectTypeGo
 		info.MainFilePaths = goMainFiles
 		return info
 	}
 
-	isDotNetProject, dotnetFiles := pathhelp.FindFileInCurrentAndSubDirs(dotnets.DotNetDefaultProjectFile)
+	isDotNetProject, dotnetFiles := utils.FindFileInCurrentAndSubDirs(dotnets.DotNetDefaultProjectFile)
 	if isDotNetProject {
 		info.Type = ProjectTypeDotNet
 		info.MainFilePaths = dotnetFiles

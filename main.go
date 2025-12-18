@@ -23,5 +23,6 @@ func main() {
 	rootCmd.AddCommand(commands.BuildImageCmd)
 	rootCmd.AddCommand(commands.ProxyCmd)
 	rootCmd.AddCommand(commands.CompletionCmd)
+	rootCmd.AddCommand(commands.HttpCmd)
 	rootCmd.Execute()
 }
