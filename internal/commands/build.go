@@ -8,19 +8,19 @@ import (
 )
 
 var BuildCmd = &cobra.Command{
-	Use:   "build",
-	Short: "编译项目",
+	Use:   "publish",
+	Short: "编译发布项目",
 	Run: func(cmd *cobra.Command, args []string) {
 		projectInfo := DetectProjectType()
 
 		switch projectInfo.Type {
 		case ProjectTypeGo:
-			error := golangs.BuildGoProject(projectInfo.MainFilePaths[0])
+			error := golangs.PublishGoProject(projectInfo.MainFilePaths[0])
 			if error != nil {
 				panic(error)
 			}
 		case ProjectTypeDotNet:
-			error := dotnets.BuildDotNetProject()
+			error := dotnets.PublishDotNetProject(GetHostType())
 			if error != nil {
 				panic(error)
 			}

@@ -16,10 +16,10 @@ func RegisterHostTypeFlag(cmd *cobra.Command) {
 }
 
 func hostTypeCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-	cfg := config.GetConfigInstance()
+	cfg, _ := config.LoadDotnetConfig()
 
-	hosts := make([]string, 0, len(cfg.DotNetHosts))
-	for name := range cfg.DotNetHosts {
+	hosts := make([]string, 0, len(cfg.Config.DotNetHosts))
+	for name := range cfg.Config.DotNetHosts {
 		hosts = append(hosts, name)
 	}
 

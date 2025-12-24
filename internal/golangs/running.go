@@ -7,19 +7,23 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"time"
 )
 
 const GoDefaultMainFile = "main.go"
 
-func BuildGoProject(mainFilePath string) error {
-	_, err := build(mainFilePath)
+func PublishGoProject(mainFilePath string) error {
+	_, err := publish(mainFilePath)
 	return err
 }
 
 func BuildGoDockerImage(mainFilePath string) error {
-	cfg := config.GetConfigInstance()
+	cfg, err := config.LoadGolangConfig()
+	if err != nil {
+		return fmt.Errorf("加载配置失败: %v", err)
+	}
 	currentDir, err := os.Getwd()
 	if err != nil {
 		return fmt.Errorf("获取当前目录失败: %v", err)
@@ -45,7 +49,7 @@ func BuildGoDockerImage(mainFilePath string) error {
 }
 
 func RunGoProject(mainFilePath string) error {
-	exePath, err := build(mainFilePath)
+	exePath, err := publish(mainFilePath)
 	if err != nil {
 		return err
 	}
@@ -60,21 +64,42 @@ func RunGoProject(mainFilePath string) error {
 	return err
 }
 
-func build(mainFilePath string) (string, error) {
-	var config = config.GetConfigInstance()
-	exeName := config.ProjectName + ".exe"
-	outputPath := filepath.Join(config.BuildPath, exeName)
-	err := os.MkdirAll(config.BuildPath, 0755)
+func publish(mainFilePath string) (string, error) {
+	cfg, err := config.LoadGolangConfig()
 	if err != nil {
-		return "", fmt.Errorf("创建目录失败: %v", err)
+		return "", fmt.Errorf("加载配置失败: %v", err)
 	}
 
-	cmd := exec.Command("go", "build", "-o", outputPath, mainFilePath)
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		return "", fmt.Errorf("编译失败: %v\n%s", err, string(output))
-	}
+	currentOs := runtime.GOOS
+	var resultPath string
 
-	fmt.Printf("编译成功: %s\n", outputPath)
-	return outputPath, nil
+	for _, platform := range cfg.Config.TargetPlatforms {
+		fmt.Printf("为平台 %s/%s 编译中...\n", platform.GOOS(), platform.GOARCH())
+
+		targetPath := cfg.Config.PublishPath + "\\" + platform.GOOS()
+		executableExt := cfg.ProjectName
+		if platform.GOOS() == "windows" {
+			executableExt += ".exe"
+		}
+
+		err = os.MkdirAll(targetPath, 0755)
+		if err != nil {
+			return "", fmt.Errorf("创建目录失败: %v", err)
+		}
+
+		outputPath := filepath.Join(targetPath, executableExt)
+		cmd := exec.Command("go", "build", "-o", outputPath, mainFilePath)
+		cmd.Env = append(os.Environ(),
+			"GOOS="+platform.GOOS(),
+			"GOARCH="+platform.GOARCH(),
+		)
+		output, err := cmd.CombinedOutput()
+		if err != nil {
+			return "", fmt.Errorf("编译失败: %v\n%s", err, string(output))
+		}
+		if currentOs == platform.GOOS() {
+			resultPath = outputPath
+		}
+	}
+	return resultPath, nil
 }

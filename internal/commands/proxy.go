@@ -38,9 +38,10 @@ var proxySetCmd = &cobra.Command{
 
 // proxy run - 在代理环境下运行命令
 var proxyRunCmd = &cobra.Command{
-	Use:   "run [command]",
-	Short: "在代理环境下运行命令",
-	Args:  cobra.MinimumNArgs(1),
+	Use:                "run [command]",
+	Short:              "在代理环境下运行命令",
+	DisableFlagParsing: true,
+	Args:               cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		socks5 := os.Getenv("socks5")
 

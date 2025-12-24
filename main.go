@@ -9,20 +9,21 @@ import (
 )
 
 func main() {
-	// 创建根命令
 	var rootCmd = &cobra.Command{
 		Use:   "tools",
-		Short: "这是我的 CLI 工具",
+		Short: "这是 CLI 工具",
 		Run: func(cmd *cobra.Command, args []string) {
-			fmt.Println("Hello from Cobra!")
+			fmt.Println("欢迎使用 CLI 工具！使用 -h 查看可用命令。")
 		},
 	}
-	rootCmd.AddCommand(commands.ProjectCmd)
+	rootCmd.AddCommand(commands.ProjectCreateCmd)
+	rootCmd.AddCommand(commands.ProjectInitCmd)
 	rootCmd.AddCommand(commands.RunCmd)
 	rootCmd.AddCommand(commands.BuildCmd)
 	rootCmd.AddCommand(commands.BuildImageCmd)
 	rootCmd.AddCommand(commands.ProxyCmd)
 	rootCmd.AddCommand(commands.CompletionCmd)
 	rootCmd.AddCommand(commands.HttpCmd)
+	rootCmd.AddCommand(commands.GitCmd)
 	rootCmd.Execute()
 }

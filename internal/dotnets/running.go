@@ -13,11 +13,11 @@ import (
 const DotNetDefaultProjectFile = "Program.cs"
 
 func RunDotNetProject(hostType string) error {
-	cfg := config.GetConfigInstance()
+	cfg, _ := config.LoadDotnetConfig()
 
 	var projectPath string
 	var found bool
-	for key, value := range cfg.DotNetHosts {
+	for key, value := range cfg.Config.DotNetHosts {
 		if strings.EqualFold(key, hostType) {
 			projectPath = value.CsProjectPath
 			found = true
@@ -44,23 +44,79 @@ func RunDotNetProject(hostType string) error {
 	return nil
 }
 
-func BuildDotNetProject() error {
-	cmd := exec.Command("dotnet", "build")
+func PublishDotNetProject(hostType string) error {
+	cfg, err := config.LoadDotnetConfig()
+	if err != nil {
+		return fmt.Errorf("加载配置失败: %v", err)
+	}
+
+	var projectPath string
+	var found bool
+	for key, value := range cfg.Config.DotNetHosts {
+		if strings.EqualFold(key, hostType) {
+			projectPath = value.CsProjectPath
+			found = true
+			break
+		}
+	}
+
+	if !found {
+		return fmt.Errorf("未找到指定的 .NET 启动项: %s", hostType)
+	}
+
+	cmd := exec.Command("dotnet", "restore", projectPath)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	fmt.Printf("正在构建 .NET 项目 \n")
-	err := cmd.Run()
+	err = cmd.Run()
 	if err != nil {
-		return fmt.Errorf("构建失败: %v", err)
+		return fmt.Errorf("还原依赖失败: %v", err)
 	}
+
+	for _, platform := range cfg.Config.TargetPlatforms {
+		fmt.Printf("为平台 %s/%s 发布中...\n", platform.DotNetOS(), platform.DotNetArch())
+		targetPath := cfg.Config.DotNetHosts[hostType].PublishPath + "\\" + platform.DotNetOS()
+		cmd := exec.Command("dotnet", "publish", projectPath,
+			"-c", "Release",
+			"-r", string(platform),
+			"--self-contained", "false",
+			"--no-restore",
+			"-o", targetPath,
+			"-p:PublishSingleFile=true",
+			"-p:DebugType=None",
+			"-p:EnableCompressionInSingleFile=true",
+			"-p:PublishTrimmed=true")
+
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		err := cmd.Run()
+		if err != nil {
+			return fmt.Errorf("发布失败: %v", err)
+		}
+	}
+
+	if len(cfg.Config.TargetPlatforms) == 0 {
+		targetPath := cfg.Config.DotNetHosts[hostType].PublishPath
+		cmd := exec.Command("dotnet", "publish", projectPath,
+			"-c", "Release",
+			"--no-restore",
+			"-o", targetPath,
+			"--self-contained", "false")
+
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		err := cmd.Run()
+		if err != nil {
+			return fmt.Errorf("发布失败: %v", err)
+		}
+	}
+
 	return nil
 }
-
 func BuildDotNetDockerImage(hostType string) error {
-	cfg := config.GetConfigInstance()
+	cfg, _ := config.LoadDotnetConfig()
 	var dockerfilePath string
 	var found bool
-	for key, value := range cfg.DotNetHosts {
+	for key, value := range cfg.Config.DotNetHosts {
 		if strings.EqualFold(key, hostType) {
 			dockerfilePath = value.DockerfilePath
 			found = true

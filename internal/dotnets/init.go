@@ -39,14 +39,18 @@ func InitDotNetProject(mainFilePaths []string) error {
 				projectMaps[nameWithoutExt] = config.DotNetHost{
 					CsProjectPath:  csprojPath,
 					DockerfilePath: dockerfilePath,
+					PublishPath:    filepath.Join(currentDir, "publish", nameWithoutExt),
 				}
 			}
 			continue
 		}
 	}
-	cfg := &config.Config{
+	cfg := &config.DotnetConfig{
 		ProjectName: filepath.Base(currentDir),
-		DotNetHosts: projectMaps,
+		Config: config.DotnetProjectConfig{
+			DotNetHosts:     projectMaps,
+			TargetPlatforms: []config.DotNetPlatform{config.DotnetLinux, config.DotnetWindows, config.DotnetOsxAmd64, config.DotnetOsxArm64},
+		},
 	}
 	configPath := filepath.Join(currentDir, config.ConfigName)
 	data, err := json.MarshalIndent(cfg, "", "  ")

@@ -20,10 +20,12 @@ func InitGoProject(projectName string) error {
 	if err != nil {
 		return err
 	}
-	cfg := &config.Config{
+	cfg := &config.GolangConfig{
 		ProjectName: projectName,
-		BuildPath:   binFullDirPath,
-		DotNetHosts: map[string]config.DotNetHost{},
+		Config: config.GolangProjectConfig{
+			PublishPath:     GoBinDir,
+			TargetPlatforms: []config.GoPlatform{config.GoLinux, config.GoWindows, config.GoDarwinAmd64, config.GoDarwinArm64},
+		},
 	}
 	configPath := filepath.Join(currentDir, config.ConfigName)
 	data, err := json.MarshalIndent(cfg, "", "  ")

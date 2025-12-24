@@ -14,12 +14,7 @@ type ProjectParams struct {
 
 var projectParams = &ProjectParams{}
 
-var ProjectCmd = &cobra.Command{
-	Use:   "project",
-	Short: "项目相关命令",
-}
-
-var projectCreateCmd = &cobra.Command{
+var ProjectCreateCmd = &cobra.Command{
 	Use:   "create <go|dotnet> <项目名>",
 	Short: "创建新项目",
 	Args:  cobra.ExactArgs(2),
@@ -71,7 +66,7 @@ var projectCreateCmd = &cobra.Command{
 	},
 }
 
-var projectInitCmd = &cobra.Command{
+var ProjectInitCmd = &cobra.Command{
 	Use:   "init [项目名]",
 	Short: "初始化项目",
 	Args:  cobra.ExactArgs(1),
@@ -105,8 +100,6 @@ var projectInitCmd = &cobra.Command{
 }
 
 func init() {
-	projectCreateCmd.Flags().StringVarP(&projectParams.Name, "name", "n", "", "项目名称")
-
-	ProjectCmd.AddCommand(projectCreateCmd)
-	ProjectCmd.AddCommand(projectInitCmd)
+	ProjectCreateCmd.Flags().StringVarP(&projectParams.Name, "name", "n", "", "项目名称")
+	ProjectInitCmd.Flags().StringVarP(&projectParams.Name, "name", "n", "", "项目名称")
 }

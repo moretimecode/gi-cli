@@ -1,14 +1,12 @@
 {
-    "ProjectName": "tools",
-    "BuildPath": "D:\\Work\\Golang\\go-cli",
-    "DotNetHosts": {
-        "web": {
-            "CsProjectPath": "",
-            "DockerfilePath": ""
-        },
-        "host": {
-            "CsProjectPath": "",
-            "DockerfilePath": ""
-        }
-    }
+  "ProjectName": "go-cli",
+  "Config": {
+    "PublishPath": "bin",
+    "TargetPlatforms": [
+      "linux/amd64",
+      "windows/amd64",
+      "darwin/amd64",
+      "darwin/arm64"
+    ]
+  }
 }
