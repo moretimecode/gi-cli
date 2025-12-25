@@ -15,17 +15,17 @@ var BuildCmd = &cobra.Command{
 
 		switch projectInfo.Type {
 		case ProjectTypeGo:
-			error := golangs.PublishGoProject(projectInfo.MainFilePaths[0])
-			if error != nil {
-				panic(error)
+			if err := golangs.PublishGoProject(projectInfo.MainFilePaths[0]); err != nil {
+				cmd.Printf("发布 Go 项目失败: %v\n", err)
+				return
 			}
 		case ProjectTypeDotNet:
-			error := dotnets.PublishDotNetProject(GetHostType())
-			if error != nil {
-				panic(error)
+			if err := dotnets.PublishDotNetProject(GetHostType()); err != nil {
+				cmd.Printf("发布 .NET 项目失败: %v\n", err)
+				return
 			}
 		default:
-			panic("未检测到 Go 或 .NET 项目")
+			cmd.Println("错误: 未检测到 Go 或 .NET 项目")
 		}
 	},
 }
@@ -37,15 +37,17 @@ var BuildImageCmd = &cobra.Command{
 		projectInfo := DetectProjectType()
 		switch projectInfo.Type {
 		case ProjectTypeGo:
-			error := golangs.BuildGoDockerImage(projectInfo.MainFilePaths[0])
-			if error != nil {
-				panic(error)
+			if err := golangs.BuildGoDockerImage(projectInfo.MainFilePaths[0]); err != nil {
+				cmd.Printf("构建 Go Docker 镜像失败: %v\n", err)
+				return
 			}
 		case ProjectTypeDotNet:
-			error := dotnets.BuildDotNetDockerImage(GetHostType())
-			if error != nil {
-				panic(error)
+			if err := dotnets.BuildDotNetDockerImage(GetHostType()); err != nil {
+				cmd.Printf("构建 .NET Docker 镜像失败: %v\n", err)
+				return
 			}
+		default:
+			cmd.Println("错误: 未检测到 Go 或 .NET 项目")
 		}
 	},
 }

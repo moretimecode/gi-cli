@@ -88,7 +88,7 @@ var ProjectInitCmd = &cobra.Command{
 				return
 			}
 		default:
-			panic("未检测到 Go 或 .NET 项目")
+			cmd.Println("错误: 未检测到 Go 或 .NET 项目")
 		}
 
 		// 自动安装补全（幂等操作）

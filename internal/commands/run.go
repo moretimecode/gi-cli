@@ -16,17 +16,17 @@ var RunCmd = &cobra.Command{
 
 		switch projectInfo.Type {
 		case ProjectTypeGo:
-			error := golangs.RunGoProject(projectInfo.MainFilePaths[0])
-			if error != nil {
-				panic(error)
+			if err := golangs.RunGoProject(projectInfo.MainFilePaths[0]); err != nil {
+				cmd.Printf("运行 Go 项目失败: %v\n", err)
+				return
 			}
 		case ProjectTypeDotNet:
-			error := dotnets.RunDotNetProject(GetHostType())
-			if error != nil {
-				panic(error)
+			if err := dotnets.RunDotNetProject(GetHostType()); err != nil {
+				cmd.Printf("运行 .NET 项目失败: %v\n", err)
+				return
 			}
 		default:
-			panic("未检测到 Go 或 .NET 项目")
+			cmd.Println("错误: 未检测到 Go 或 .NET 项目")
 		}
 	},
 }
