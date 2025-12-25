@@ -2,8 +2,10 @@ package utils
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 )
 
@@ -42,11 +44,9 @@ func FindFileInCurrentAndSubDirs(filename string) (bool, []string) {
 	return false, nil
 }
 
-// MatchFunc 定义文件名匹配函数类型
-type MatchFunc func(filename string) bool
+type matchFunc func(filename string) bool
 
-// findFileInDir 通用的目录内文件查找函数
-func findFileInDir(dirPath string, matcher MatchFunc) (string, error) {
+func findFileInDir(dirPath string, matcher matchFunc) (string, error) {
 	entries, err := os.ReadDir(dirPath)
 	if err != nil {
 		return "", err
@@ -86,4 +86,73 @@ func FindFileByFullNameInDir(filename string, dirPath string) (string, error) {
 			return name == filename
 		},
 	)
+}
+
+func FindFilesByExtsInDir(ext *[]string, dirPath string) ([]string, error) {
+	for i, e := range *ext {
+		if !strings.HasPrefix(e, ".") {
+			(*ext)[i] = "." + e
+		}
+	}
+	return findFilesInDir(
+		dirPath,
+		func(filename string) bool {
+			return slices.Contains(*ext, filepath.Ext(filename))
+		},
+	)
+}
+
+func findFilesInDir(dirPath string, matcher matchFunc) ([]string, error) {
+	totalFiles := []string{}
+	err := filepath.Walk(dirPath, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if !info.IsDir() && matcher(info.Name()) {
+			absPath, err := filepath.Abs(path)
+			if err == nil {
+				totalFiles = append(totalFiles, absPath)
+			}
+		}
+		return nil
+	})
+	return totalFiles, err
+}
+
+func CountLinesFast(path string) (int, error) {
+	file, err := os.Open(path)
+	if err != nil {
+		return 0, err
+	}
+	defer file.Close()
+
+	buf := make([]byte, 32*1024)
+	lines := 0
+	hasData := false
+	lastByte := byte(0)
+
+	for {
+		n, err := file.Read(buf)
+		if n > 0 {
+			hasData = true
+			lastByte = buf[n-1]
+			for _, b := range buf[:n] {
+				if b == '\n' {
+					lines++
+				}
+			}
+		}
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+			return lines, err
+		}
+	}
+
+	if hasData && lastByte != '\n' {
+		lines++
+	}
+
+	return lines, nil
 }

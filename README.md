@@ -486,6 +486,12 @@ tools proxy run go mod download
 tools proxy run git clone https://github.com/...
 ```
 
+### 5. 代码统计
+
+```bash
+# 代码统计总览，个文件代码行总数，列出最多的和最少的，自动忽略.gitignore里面配置的
+tools code-summary
+
 ## 📝 依赖包
 
 - [github.com/spf13/cobra](https://github.com/spf13/cobra) - CLI 框架
@@ -494,3 +500,4 @@ tools proxy run git clone https://github.com/...
 ## 📄 License
 
 本项目采用 MIT License 许可证，详见 [LICENSE](LICENSE) 文件。
+```

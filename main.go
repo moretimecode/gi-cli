@@ -26,6 +26,7 @@ func main() {
 	rootCmd.AddCommand(commands.CompletionCmd)
 	rootCmd.AddCommand(commands.HttpCmd)
 	rootCmd.AddCommand(commands.GitCmd)
+	rootCmd.AddCommand(commands.SummaryCmd)
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Printf("命令执行失败: %v\n", err)
 		os.Exit(1)
