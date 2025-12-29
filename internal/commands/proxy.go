@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"runtime"
 
 	"github.com/spf13/cobra"
 )
@@ -16,23 +17,30 @@ var ProxyCmd = &cobra.Command{
 // proxy set - 显示设置代理的命令
 var proxySetCmd = &cobra.Command{
 	Use:   "set",
-	Short: "显示设置代理的 PowerShell 命令",
+	Short: "显示设置代理的命令",
 	Run: func(cmd *cobra.Command, args []string) {
 		socks5 := os.Getenv("socks5")
 
 		if socks5 == "" {
 			fmt.Println("错误: 未设置环境变量 socks5")
-			fmt.Println("请先设置环境变量，例如: export socks5=\"127.0.0.1:1080\"")
+			if runtime.GOOS == "windows" {
+				fmt.Println("请先设置环境变量，例如: $env:socks5 = \"socks5://127.0.0.1:1080\"")
+			} else {
+				fmt.Println("请先设置环境变量，例如: export socks5=\"socks5://127.0.0.1:1080\"")
+			}
 			return
 		}
 
 		fmt.Println("复制并执行以下命令来设置代理:")
 		fmt.Println()
-		fmt.Printf("$env:http_proxy = \"%s\"\n", socks5)
-		fmt.Printf("$env:https_proxy = \"%s\"\n", socks5)
-		fmt.Println()
-		fmt.Println("取消代理:")
-		fmt.Println("$env:http_proxy = \"\"; $env:https_proxy = \"\"")
+
+		if runtime.GOOS == "windows" {
+			fmt.Printf("$env:http_proxy = \"%s\"\n", socks5)
+			fmt.Printf("$env:https_proxy = \"%s\"\n", socks5)
+		} else {
+			fmt.Printf("export http_proxy=\"%s\"\n", socks5)
+			fmt.Printf("export https_proxy=\"%s\"\n", socks5)
+		}
 	},
 }
 

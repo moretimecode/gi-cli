@@ -143,3 +143,12 @@ func MinBy[T any](slice []T, less func(a, b T) bool) T {
 	}
 	return min
 }
+
+// SelectMany 展平集合，将每个元素映射为一个集合，然后将所有集合合并为一个平面集合
+func SelectMany[T any, R any](slice []T, selector func(T) []R) []R {
+	result := make([]R, 0)
+	for _, item := range slice {
+		result = append(result, selector(item)...)
+	}
+	return result
+}

@@ -156,3 +156,35 @@ func CountLinesFast(path string) (int, error) {
 
 	return lines, nil
 }
+
+func CountLinesFromReader(reader io.Reader) (int, error) {
+	buf := make([]byte, 32*1024)
+	lines := 0
+	hasData := false
+	lastByte := byte(0)
+
+	for {
+		n, err := reader.Read(buf)
+		if n > 0 {
+			hasData = true
+			lastByte = buf[n-1]
+			for _, b := range buf[:n] {
+				if b == '\n' {
+					lines++
+				}
+			}
+		}
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+			return lines, err
+		}
+	}
+
+	if hasData && lastByte != '\n' {
+		lines++
+	}
+
+	return lines, nil
+}
