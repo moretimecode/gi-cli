@@ -88,6 +88,15 @@ func FindFileByFullNameInDir(filename string, dirPath string) (string, error) {
 	)
 }
 
+func FileFilesByFileNameInDir(filename string, dirPath string) ([]string, error) {
+	return findFilesInDir(
+		dirPath,
+		func(name string) bool {
+			return name == filename
+		},
+	)
+}
+
 func FindFilesByExtsInDir(ext *[]string, dirPath string) ([]string, error) {
 	for i, e := range *ext {
 		if !strings.HasPrefix(e, ".") {
