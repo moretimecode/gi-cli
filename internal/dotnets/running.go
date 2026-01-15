@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -51,10 +52,12 @@ func PublishDotNetProject(hostType string) error {
 	}
 
 	var projectPath string
+	var publishPath string
 	var found bool
 	for key, value := range cfg.Config.DotNetHosts {
 		if strings.EqualFold(key, hostType) {
 			projectPath = value.CsProjectPath
+			publishPath = value.PublishPath
 			found = true
 			break
 		}
@@ -64,17 +67,20 @@ func PublishDotNetProject(hostType string) error {
 		return fmt.Errorf("未找到指定的 .NET 启动项: %s", hostType)
 	}
 
-	cmd := exec.Command("dotnet", "restore", projectPath)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	err = cmd.Run()
-	if err != nil {
-		return fmt.Errorf("还原依赖失败: %v", err)
-	}
+	fmt.Printf("项目路径: %s\n发布根目录: %s\n", projectPath, publishPath)
 
 	for _, platform := range cfg.Config.TargetPlatforms {
+		fmt.Printf("为平台 %s/%s 还原依赖...\n", platform.DotNetOS(), platform.DotNetArch())
+		restoreCmd := exec.Command("dotnet", "restore", projectPath, "-r", string(platform))
+		restoreCmd.Stdout = os.Stdout
+		restoreCmd.Stderr = os.Stderr
+		err = restoreCmd.Run()
+		if err != nil {
+			return fmt.Errorf("还原依赖失败 (%s): %v", platform, err)
+		}
+
 		fmt.Printf("为平台 %s/%s 发布中...\n", platform.DotNetOS(), platform.DotNetArch())
-		targetPath := cfg.Config.DotNetHosts[hostType].PublishPath + "\\" + platform.DotNetOS()
+		targetPath := filepath.Join(publishPath, platform.DotNetOS())
 		cmd := exec.Command("dotnet", "publish", projectPath,
 			"-c", "Release",
 			"-r", string(platform),
@@ -95,11 +101,10 @@ func PublishDotNetProject(hostType string) error {
 	}
 
 	if len(cfg.Config.TargetPlatforms) == 0 {
-		targetPath := cfg.Config.DotNetHosts[hostType].PublishPath
 		cmd := exec.Command("dotnet", "publish", projectPath,
 			"-c", "Release",
 			"--no-restore",
-			"-o", targetPath,
+			"-o", publishPath,
 			"--self-contained", "false")
 
 		cmd.Stdout = os.Stdout

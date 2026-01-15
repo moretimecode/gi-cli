@@ -76,7 +76,7 @@ func publish(mainFilePath string) (string, error) {
 	for _, platform := range cfg.Config.TargetPlatforms {
 		fmt.Printf("为平台 %s/%s 编译中...\n", platform.GOOS(), platform.GOARCH())
 
-		targetPath := cfg.Config.PublishPath + "\\" + platform.GOOS()
+		targetPath := filepath.Join(cfg.Config.PublishPath, platform.GOOS())
 		executableExt := cfg.ProjectName
 		if platform.GOOS() == "windows" {
 			executableExt += ".exe"
