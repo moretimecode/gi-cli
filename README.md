@@ -15,7 +15,16 @@ go build -o tools.exe
 ```powershell
 # PowerShell
 tools completion powershell > $HOME\tools-completion.ps1
+# 确保 Profile 目录存在（首次使用 PowerShell 时可能还没有）
+New-Item -ItemType Directory -Force (Split-Path $PROFILE) | Out-Null
 echo ". `$HOME\tools-completion.ps1" >> $PROFILE
+
+# 如果提示“禁止运行脚本”(ExecutionPolicy)，可用以下方式之一处理：
+# 方式 A（推荐）：仅对当前用户放开本地脚本
+# Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
+#
+# 方式 B：仅当前 PowerShell 窗口临时放开（关闭窗口后失效）
+# powershell -ExecutionPolicy Bypass
 ```
 
 ```bash

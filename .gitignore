@@ -473,5 +473,5 @@ $RECYCLE.BIN/
 *.msix
 *.msm
 *.msp
-build.bat
 tools.exe
+build.bat
