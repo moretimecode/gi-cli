@@ -14,6 +14,18 @@ build_dotnet.bat
 .\build_dotnet.ps1
 ```
 
+如果 PowerShell 显示“无法加载文件，因为在此系统上禁止运行脚本”，请先执行一次：
+
+```powershell
+Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
+```
+
+或者临时绕过执行策略：
+
+```powershell
+powershell.exe -ExecutionPolicy Bypass -File .\build_dotnet.ps1
+```
+
 这会：
 
 - 编译 Windows、Linux、macOS 三个平台的 C# 分析器
