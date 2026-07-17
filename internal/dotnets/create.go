@@ -85,12 +85,12 @@ func CreateDotNetProject(projectName string) error {
 		}
 	}
 	// 生成必要的代码文件
-	err := createProgramCsFile(apiPath, appLayer)
+	err := createProgramCsFile(apiPath, apiLayer)
 	if err != nil {
 		return fmt.Errorf("创建 Api/Program.cs 失败: %v", err)
 	}
 
-	err = createStartupCsFile(apiPath, appLayer)
+	err = createStartupCsFile(apiPath, apiLayer)
 	if err != nil {
 		return fmt.Errorf("创建 Api/Startup.cs 失败: %v", err)
 	}
@@ -104,17 +104,27 @@ func CreateDotNetProject(projectName string) error {
 	if err != nil {
 		return fmt.Errorf("创建配置文件失败: %v", err)
 	}
+
+	format_cmd := exec.Command("dotnet", "format")
+	format_cmd.Stdout = os.Stdout
+	format_cmd.Stderr = os.Stderr
+
+	err = format_cmd.Run()
+	if err != nil {
+		return fmt.Errorf("命令执行失败 %v: %v", format_cmd, err)
+	}
+
 	fmt.Printf("✓ .NET 项目 %s 创建完成\n", projectName)
 	return nil
 }
 
-func createProgramCsFile(apiPath string, appLayer string) error {
+func createProgramCsFile(apiPath string, apiLayer string) error {
 	apiProgramContent :=
 		`using Microsoft.AspNetCore.Builder;
 		using NLog.Extensions.Logging;
 		using Microsoft.Extensions.DependencyInjection;
 
-		namespace ` + appLayer + ` ;
+		namespace ` + apiLayer + ` ;
 		
 		public class Program
 		{
@@ -153,15 +163,20 @@ func createProgramCsFile(apiPath string, appLayer string) error {
 	return nil
 }
 
-func createStartupCsFile(apiPath string, appLayer string) error {
+func createStartupCsFile(apiPath string, apiLayer string) error {
 	apiStartupContent := `
 	` + ` 
-		namespace ` + appLayer + `;
+		namespace ` + apiLayer + `;
 
 		public class Startup(IConfiguration configuration, IWebHostEnvironment hostingEnvironment)
 		{
 		  	public IConfiguration Configuration { get; } = configuration;
    			public IWebHostEnvironment HostingEnvironment { get; } = hostingEnvironment;
+
+			public void ConfigureServices(IServiceCollection services)
+			{
+				services.AddControllers();
+			}
 
 			public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
 			{
