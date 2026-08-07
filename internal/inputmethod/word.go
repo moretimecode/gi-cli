@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"fmt"
 	"os"
-	"strconv"
 	"strings"
 	"unicode/utf8"
 
@@ -37,6 +36,18 @@ func decodeLineToUTF8(rawLine []byte) string {
 	return string(rawLine)
 }
 
+// rawLine 表示词库文件中的一行。
+// isData 为 true 时代表 "词\t拼音\t权重" 格式的词条行。
+type rawLine struct {
+	text   string
+	isData bool
+	word   string
+}
+
+func formatEntry(entry WordEntry) string {
+	return fmt.Sprintf("%s\t%s\t%d", entry.Word, entry.Pinyin, entry.Weight)
+}
+
 func SetTerm(term *WordEntry) error {
 	if term == nil {
 		return fmt.Errorf("term 不能为空")
@@ -54,8 +65,6 @@ func SetTerm(term *WordEntry) error {
 		term.Weight = weight
 	}
 
-	exitsWord := make(map[string]WordEntry)
-
 	file, err := os.OpenFile(term_resource, os.O_RDWR|os.O_CREATE, 0644)
 	if err != nil {
 		return fmt.Errorf("词库路劲设置有问题,请检查环境变量 term_resource")
@@ -63,41 +72,41 @@ func SetTerm(term *WordEntry) error {
 	defer file.Close()
 
 	scanner := bufio.NewScanner(file)
-	lineNum := 0
+	var lines []rawLine
 
 	for scanner.Scan() {
-		lineNum++
 		line := decodeLineToUTF8(append([]byte(nil), scanner.Bytes()...))
 		line = strings.TrimSuffix(line, "\r")
 
-		if line == "" {
-			continue
-		}
-
 		parts := strings.Split(line, "\t")
-		if len(parts) < 3 {
-			fmt.Printf("第 %d 行格式错误: %s\n", lineNum, line)
-			continue
+		// 两列及以上且首列不是注释的，视为词条行（词\t拼音\t权重 / 词\t拼音）
+		if len(parts) >= 2 && parts[0] != "" && !strings.HasPrefix(parts[0], "#") {
+			lines = append(lines, rawLine{text: line, isData: true, word: parts[0]})
+		} else {
+			// 注释、表头（如 #@/db_name）、空行等，原样保留
+			lines = append(lines, rawLine{text: line})
 		}
-
-		num, err := strconv.Atoi(parts[2])
-		if err != nil {
-			num = weight
-		}
-
-		entry := WordEntry{
-			Word:   parts[0],
-			Pinyin: parts[1],
-			Weight: num,
-		}
-
-		exitsWord[entry.Word] = entry
 	}
 	if err := scanner.Err(); err != nil {
 		return fmt.Errorf("读取词库文件失败: %w", err)
 	}
 
-	exitsWord[term.Word] = *term
+	// 替换同名词条；文件里没有则追加到末尾
+	added := false
+	var out []string
+	for _, l := range lines {
+		if l.isData && l.word == term.Word {
+			if !added {
+				out = append(out, formatEntry(*term))
+				added = true
+			}
+			continue
+		}
+		out = append(out, l.text)
+	}
+	if !added {
+		out = append(out, formatEntry(*term))
+	}
 
 	err = file.Truncate(0)
 	if err != nil {
@@ -108,11 +117,8 @@ func SetTerm(term *WordEntry) error {
 	}
 
 	writer := bufio.NewWriter(file)
-
-	for _, entry := range exitsWord {
-		line := fmt.Sprintf("%s\t%s\t%d\n", entry.Word, entry.Pinyin, entry.Weight)
-		_, err := writer.WriteString(line)
-		if err != nil {
+	for _, line := range out {
+		if _, err := writer.WriteString(line + "\n"); err != nil {
 			return fmt.Errorf("写入文件失败: %w", err)
 		}
 	}
