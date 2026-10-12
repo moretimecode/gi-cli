@@ -77,9 +77,8 @@ type DotNetHost struct {
 }
 
 var (
-	once         sync.Once
-	dotnetConfig *DotnetConfig
-	golangConfig *GolangConfig
+	golangConfigLoader = sync.OnceValues(loadConfig[GolangProjectConfig])
+	dotnetConfigLoader = sync.OnceValues(loadConfig[DotnetProjectConfig])
 )
 
 func loadConfig[T any]() (*ConfigBase[T], error) {
@@ -107,19 +106,9 @@ func loadConfig[T any]() (*ConfigBase[T], error) {
 }
 
 func LoadGolangConfig() (*GolangConfig, error) {
-	var error error
-	once.Do(
-		func() {
-			golangConfig, error = loadConfig[GolangProjectConfig]()
-		})
-	return golangConfig, error
+	return golangConfigLoader()
 }
 
 func LoadDotnetConfig() (*DotnetConfig, error) {
-	var error error
-	once.Do(
-		func() {
-			dotnetConfig, error = loadConfig[DotnetProjectConfig]()
-		})
-	return dotnetConfig, error
+	return dotnetConfigLoader()
 }

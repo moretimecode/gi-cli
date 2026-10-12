@@ -134,7 +134,29 @@ tools code-summary
 
 # 指定目录
 tools code-summary <目录路径>
+
+# 只统计 .cs 文件
+tools code-summary -s "*.cs"
+
+# 排除生成代码和测试代码
+tools code-summary -f "**/generated/,*_test.cs"
+
+# 按顺序：选出 src 内文件 → 排除 generated 目录 → 只保留 .cs 文件
+tools code-summary -s "src/" -f "**/generated/" -s "*.cs"
+
+# 指定目录，也支持 -p/--path
+tools code-summary /path/to/project -s "*.cs,*.fs" -f "**/Tests/"
 ```
+
+`-f/--filters` 排除匹配的文件或目录，`-s/--select` 只保留匹配的文件或目录。
+两者使用 `.gitignore` 匹配规则，可重复、交错使用，严格按照参数出现顺序筛选上一步的结果。
+后续参数不能恢复之前排除的文件。默认 `.gitignore` 和内置目录排除规则先执行，
+统计范围仍为工具支持的源代码文件后缀。
+
+同一次参数可用逗号分隔多条规则，例如 `-s "*.cs,*.fs"` 选择两种后缀；
+规则组内支持 `!` 例外，例如 `-f "*.cs,!keep.cs"` 排除其他 `.cs` 文件，保留 `keep.cs`。
+目录规则如 `src/` 可匹配任意层级的同名目录，`/src/` 只匹配统计目录根下的目录。
+建议给规则加引号，避免被 shell 提前展开。
 
 **输出信息：**
 

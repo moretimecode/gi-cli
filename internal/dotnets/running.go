@@ -14,7 +14,10 @@ import (
 const DotNetDefaultProjectFile = "Program.cs"
 
 func RunDotNetProject(hostType string) error {
-	cfg, _ := config.LoadDotnetConfig()
+	cfg, err := config.LoadDotnetConfig()
+	if err != nil {
+		return fmt.Errorf("加载配置失败: %w", err)
+	}
 
 	var projectPath string
 	var found bool
@@ -37,7 +40,7 @@ func RunDotNetProject(hostType string) error {
 
 	fmt.Printf("正在运行 .NET 项目 (%s): %s\n", hostType, projectPath)
 
-	err := cmd.Run()
+	err = cmd.Run()
 	if err != nil {
 		return fmt.Errorf("运行失败: %v", err)
 	}
@@ -118,7 +121,10 @@ func PublishDotNetProject(hostType string) error {
 	return nil
 }
 func BuildDotNetDockerImage(hostType string) error {
-	cfg, _ := config.LoadDotnetConfig()
+	cfg, err := config.LoadDotnetConfig()
+	if err != nil {
+		return fmt.Errorf("加载配置失败: %w", err)
+	}
 	var dockerfilePath string
 	var found bool
 	for key, value := range cfg.Config.DotNetHosts {
@@ -146,7 +152,7 @@ func BuildDotNetDockerImage(hostType string) error {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	fmt.Printf("正在为 .NET 项目 (%s) 构建 Docker 镜像: %s\n", hostType, dockerfilePath)
-	err := cmd.Run()
+	err = cmd.Run()
 	if err != nil {
 		return fmt.Errorf("构建 Docker 镜像失败: %v", err)
 	}

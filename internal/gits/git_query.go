@@ -1,8 +1,9 @@
 package gits
 
 import (
-	"fmt"
 	"gocli/internal/utils"
+	"maps"
+	"slices"
 	"sort"
 	"strings"
 	"time"
@@ -24,49 +25,20 @@ type ContributorRank struct {
 }
 
 func GetTopContributors(authors []AuthorMetrics, top int) []ContributorRank {
-	sorted := make([]AuthorMetrics, len(authors))
-	copy(sorted, authors)
-	sort.Slice(sorted, func(i, j int) bool {
-		return sorted[i].TotalCommits > sorted[j].TotalCommits
-	})
-
-	if top > 0 && top < len(sorted) {
-		sorted = sorted[:top]
-	}
-
-	return utils.Select(sorted, func(author AuthorMetrics) ContributorRank {
-		return ContributorRank{
-			AuthorName:   author.Name,
-			TotalCommits: author.TotalCommits,
-			TotalAdded:   author.TotalAdded,
-			TotalDeleted: author.TotalDeleted,
-			TotalChanged: author.TotalAdded + author.TotalDeleted,
-			Rank:         0,
-		}
-	})
+	return utils.From(authors).
+		OrderByDescending(func(author AuthorMetrics) int { return author.TotalCommits }).
+		Top(top).
+		Select(toContributorRank).
+		ToSlice()
 }
 
 // GetTopCodeWriters 获取代码编写排行榜（按新增行数）
 func GetTopCodeWriters(authors []AuthorMetrics, top int) []ContributorRank {
-	sorted := make([]AuthorMetrics, len(authors))
-	copy(sorted, authors)
-	sort.Slice(sorted, func(i, j int) bool {
-		return sorted[i].TotalAdded > sorted[j].TotalAdded
-	})
-
-	if top > 0 && top < len(sorted) {
-		sorted = sorted[:top]
-	}
-
-	ranks := utils.Select(sorted, func(author AuthorMetrics) ContributorRank {
-		return ContributorRank{
-			AuthorName:   author.Name,
-			TotalCommits: author.TotalCommits,
-			TotalAdded:   author.TotalAdded,
-			TotalDeleted: author.TotalDeleted,
-			TotalChanged: author.TotalAdded + author.TotalDeleted,
-		}
-	})
+	ranks := utils.From(authors).
+		OrderByDescending(func(author AuthorMetrics) int { return author.TotalAdded }).
+		Top(top).
+		Select(toContributorRank).
+		ToSlice()
 
 	// 添加排名
 	for i := range ranks {
@@ -74,6 +46,16 @@ func GetTopCodeWriters(authors []AuthorMetrics, top int) []ContributorRank {
 	}
 
 	return ranks
+}
+
+func toContributorRank(author AuthorMetrics) ContributorRank {
+	return ContributorRank{
+		AuthorName:   author.Name,
+		TotalCommits: author.TotalCommits,
+		TotalAdded:   author.TotalAdded,
+		TotalDeleted: author.TotalDeleted,
+		TotalChanged: author.TotalAdded + author.TotalDeleted,
+	}
 }
 
 // ============ 时间分析相关 ============
@@ -146,12 +128,9 @@ func FindNightOwls(commits []GitCommitMetrics, threshold float64) []NightOwlStat
 		}
 	}
 
-	// 按夜间提交数排序（夜间提交越多越靠前）
-	sort.Slice(results, func(i, j int) bool {
-		return results[i].NightCommits > results[j].NightCommits
-	})
-
-	return results
+	return utils.From(results).
+		OrderByDescending(func(stats NightOwlStats) int { return stats.NightCommits }).
+		ToSlice()
 }
 
 // ============ 活跃度分析 ============
@@ -337,22 +316,7 @@ func GetHotFiles(fileMetrics []FileMetrics, repoPath string, top int) []HotFile 
 		fileMap[fm.FilePath].TotalModified += fm.LinesModified
 	}
 
-	// 转换为结果
-	results := make([]HotFile, 0, len(fileMap))
-	for _, hotFile := range fileMap {
-		results = append(results, *hotFile)
-	}
-
-	// 按修改次数排序
-	sort.Slice(results, func(i, j int) bool {
-		return results[i].ChangeCount > results[j].ChangeCount
-	})
-
-	if top > 0 && top < len(results) {
-		results = results[:top]
-	}
-
-	return results
+	return rankHotFiles(fileMap, top)
 }
 
 // getHotFilesWithoutCheck 不检查文件是否存在的后备逻辑
@@ -371,22 +335,15 @@ func getHotFilesWithoutCheck(fileMetrics []FileMetrics, matcher utils.PathIgnore
 		fileMap[fm.FilePath].TotalModified += fm.LinesModified
 	}
 
-	// 转换为结果
-	results := make([]HotFile, 0, len(fileMap))
-	for _, hotFile := range fileMap {
-		results = append(results, *hotFile)
-	}
+	return rankHotFiles(fileMap, top)
+}
 
-	// 按修改次数排序
-	sort.Slice(results, func(i, j int) bool {
-		return results[i].ChangeCount > results[j].ChangeCount
-	})
-
-	if top > 0 && top < len(results) {
-		results = results[:top]
-	}
-
-	return results
+func rankHotFiles(files map[string]*HotFile, top int) []HotFile {
+	return utils.From(slices.Collect(maps.Values(files))).
+		Select(func(file *HotFile) HotFile { return *file }).
+		OrderByDescending(func(file HotFile) int { return file.ChangeCount }).
+		Top(top).
+		ToSlice()
 }
 
 // GetAuthorHotFiles 获取特定作者修改频率最高的文件
@@ -424,22 +381,7 @@ func GetAuthorHotFiles(fileMetrics []FileMetrics, commits []GitCommitMetrics, au
 		fileMap[fm.FilePath].TotalModified += fm.LinesModified
 	}
 
-	// 转换为结果
-	results := make([]HotFile, 0, len(fileMap))
-	for _, hotFile := range fileMap {
-		results = append(results, *hotFile)
-	}
-
-	// 按修改次数排序
-	sort.Slice(results, func(i, j int) bool {
-		return results[i].ChangeCount > results[j].ChangeCount
-	})
-
-	if top > 0 && top < len(results) {
-		results = results[:top]
-	}
-
-	return results
+	return rankHotFiles(fileMap, top)
 }
 
 // ============ 代码稳定性分析 ============
@@ -509,13 +451,8 @@ func AnalyzeCodeStability(fileMetrics []FileMetrics, commits []GitCommitMetrics,
 			continue
 		}
 
-		// 排序找到最后修改时间
-		sort.Slice(timestamps, func(i, j int) bool {
-			return timestamps[i] > timestamps[j]
-		})
-
-		lastChange := time.Unix(timestamps[0], 0)
-		firstChange := time.Unix(timestamps[len(timestamps)-1], 0)
+		lastChange := time.Unix(slices.Max(timestamps), 0)
+		firstChange := time.Unix(slices.Min(timestamps), 0)
 
 		daysSinceLast := int(now.Sub(lastChange).Hours() / 24)
 		totalDays := int(lastChange.Sub(firstChange).Hours() / 24)
@@ -533,12 +470,9 @@ func AnalyzeCodeStability(fileMetrics []FileMetrics, commits []GitCommitMetrics,
 		})
 	}
 
-	// 按最后修改时间排序
-	sort.Slice(results, func(i, j int) bool {
-		return results[i].DaysSinceLastChange > results[j].DaysSinceLastChange
-	})
-
-	return results
+	return utils.From(results).
+		OrderByDescending(func(file CodeStability) int { return file.DaysSinceLastChange }).
+		ToSlice()
 }
 
 // ============ 使用 LINQ 风格的高级查询 ============
@@ -573,18 +507,10 @@ func GetFilesByType(fileMetrics []FileMetrics, extensions []string) []FileMetric
 
 // GetLargestCommits 获取改动最大的提交
 func GetLargestCommits(commitStats []CommitStatsMetrics, top int) []CommitStatsMetrics {
-	sorted := make([]CommitStatsMetrics, len(commitStats))
-	copy(sorted, commitStats)
-
-	sort.Slice(sorted, func(i, j int) bool {
-		return sorted[i].TotalLines > sorted[j].TotalLines
-	})
-
-	if top > 0 && top < len(sorted) {
-		sorted = sorted[:top]
-	}
-
-	return sorted
+	return utils.From(commitStats).
+		OrderByDescending(func(commit CommitStatsMetrics) int { return commit.TotalLines }).
+		Top(top).
+		ToSlice()
 }
 
 // ============ 协作分析 ============
@@ -606,7 +532,7 @@ func FindCollaborations(fileMetrics []FileMetrics, commits []GitCommitMetrics) [
 	}
 
 	// 筛选出有作者信息的文件变更记录
-	validFileMetrics := utils.Where(fileMetrics, func(fm FileMetrics) bool {
+	validFileMetrics := utils.From(fileMetrics).Where(func(fm FileMetrics) bool {
 		_, ok := commitAuthorMap[fm.CommitID]
 		return ok
 	})
@@ -620,87 +546,45 @@ func FindCollaborations(fileMetrics []FileMetrics, commits []GitCommitMetrics) [
 		fileAuthorsMap[fm.FilePath][commitAuthorMap[fm.CommitID]] = true
 	}
 
-	// 将 fileAuthorsMap 转换为结构化数据
-	type fileAuthors struct {
-		authors map[string]bool
-	}
-
-	fileAuthorsList := make([]fileAuthors, 0, len(fileAuthorsMap))
-	for _, authors := range fileAuthorsMap {
-		fileAuthorsList = append(fileAuthorsList, fileAuthors{authors: authors})
-	}
-
-	// 使用 Select 将每个文件的作者 map 转换为作者列表
-	authorLists := utils.Select(fileAuthorsList, func(fa fileAuthors) []string {
-		result := make([]string, 0, len(fa.authors))
-		for author := range fa.authors {
-			result = append(result, author)
-		}
-		return result
-	})
-
-	// 筛选出有多个作者的文件
-	validAuthorLists := utils.Where(authorLists, func(list []string) bool {
-		return len(list) >= 2
-	})
-
-	// 定义配对结构
+	// A comparable struct keeps author names intact, including names containing '|'.
 	type authorPair struct {
-		key string
+		author1 string
+		author2 string
 	}
 
-	// 使用 SelectMany 将每个作者列表转换为配对列表，然后展平
-	allPairs := utils.SelectMany(validAuthorLists, func(authorList []string) []authorPair {
-		pairs := make([]authorPair, 0)
-		for i := range authorList {
-			for j := i + 1; j < len(authorList); j++ {
-				a1, a2 := authorList[i], authorList[j]
-				if a1 > a2 {
-					a1, a2 = a2, a1
+	pairCounts := utils.From(slices.Collect(maps.Values(fileAuthorsMap))).
+		Where(func(authors map[string]bool) bool { return len(authors) >= 2 }).
+		Select(func(authors map[string]bool) []string {
+			return slices.Collect(maps.Keys(authors))
+		}).
+		SelectMany(func(authorList []string) []authorPair {
+			pairs := make([]authorPair, 0)
+			for i := range authorList {
+				for j := i + 1; j < len(authorList); j++ {
+					a1, a2 := authorList[i], authorList[j]
+					if a1 > a2 {
+						a1, a2 = a2, a1
+					}
+					pairs = append(pairs, authorPair{author1: a1, author2: a2})
 				}
-				pairs = append(pairs, authorPair{
-					key: fmt.Sprintf("%s|%s", a1, a2),
-				})
 			}
-		}
-		return pairs
-	})
+			return pairs
+		}).
+		CountBy(func(pair authorPair) authorPair { return pair })
 
-	// 统计每个配对出现的次数
-	pairMap := make(map[string]int)
-	for _, pair := range allPairs {
-		pairMap[pair.key]++
+	results := make([]CollaborationPair, 0, len(pairCounts))
+	for pair, count := range pairCounts {
+		results = append(results, CollaborationPair{
+			Author1:     pair.author1,
+			Author2:     pair.author2,
+			SharedFiles: count,
+			Score:       float64(count),
+		})
 	}
 
-	// 使用 Select 转换为结果（过滤掉无效的键）
-	type pairEntry struct {
-		key   string
-		count int
-	}
-
-	pairEntries := make([]pairEntry, 0, len(pairMap))
-	for key, count := range pairMap {
-		pairEntries = append(pairEntries, pairEntry{key: key, count: count})
-	}
-
-	results := utils.Select(utils.Where(pairEntries, func(entry pairEntry) bool {
-		return len(strings.Split(entry.key, "|")) == 2
-	}), func(entry pairEntry) CollaborationPair {
-		parts := strings.Split(entry.key, "|")
-		return CollaborationPair{
-			Author1:     parts[0],
-			Author2:     parts[1],
-			SharedFiles: entry.count,
-			Score:       float64(entry.count),
-		}
-	})
-
-	// 按共享文件数排序
-	sort.Slice(results, func(i, j int) bool {
-		return results[i].SharedFiles > results[j].SharedFiles
-	})
-
-	return results
+	return utils.From(results).
+		OrderByDescending(func(pair CollaborationPair) int { return pair.SharedFiles }).
+		ToSlice()
 }
 
 // AuthorFileDetail 作者文件详情
@@ -723,7 +607,7 @@ func FindCollaborationDetail(fileMetrics []FileMetrics, commits []GitCommitMetri
 	}
 
 	// 筛选出有作者信息的文件变更记录
-	validFileMetrics := utils.Where(fileMetrics, func(fm FileMetrics) bool {
+	validFileMetrics := utils.From(fileMetrics).Where(func(fm FileMetrics) bool {
 		_, ok := commitAuthorMap[fm.CommitID]
 		return ok
 	})
@@ -753,17 +637,14 @@ func FindCollaborationDetail(fileMetrics []FileMetrics, commits []GitCommitMetri
 	}
 
 	// 筛选出所有指定作者都参与的文件
-	collabFiles := utils.Where(fileEntries, func(entry fileCommitEntry) bool {
+	return utils.From(fileEntries).Where(func(entry fileCommitEntry) bool {
 		for _, author := range authors {
 			if entry.authorCommits[author] == 0 {
 				return false
 			}
 		}
 		return true
-	})
-
-	// 转换为 AuthorFileDetail
-	results := utils.Select(collabFiles, func(entry fileCommitEntry) AuthorFileDetail {
+	}).Select(func(entry fileCommitEntry) AuthorFileDetail {
 		totalCommits := 0
 		for _, count := range entry.authorCommits {
 			totalCommits += count
@@ -780,12 +661,5 @@ func FindCollaborationDetail(fileMetrics []FileMetrics, commits []GitCommitMetri
 			AuthorCommits: authorCommits,
 			TotalCommits:  totalCommits,
 		}
-	})
-
-	// 按总提交次数排序（最热门的协作文件在前）
-	sort.Slice(results, func(i, j int) bool {
-		return results[i].TotalCommits > results[j].TotalCommits
-	})
-
-	return results
+	}).OrderByDescending(func(detail AuthorFileDetail) int { return detail.TotalCommits }).ToSlice()
 }
